@@ -8,9 +8,9 @@ COLORING = "\033[{}m{}\033[0m"
 def configure(di_container: Injector) -> None:
     di_container.register(LoggerProtocol, ConsoleLogger, LifeStyle.SINGLETON)
     di_container.register(DatabaseProtocol, SqlDatabase, LifeStyle.SCOPED,
-                      params={'connection_string': 'server=prod;db=app'})
+                      params = {'connection_string': 'server=prod;db=app'})
     di_container.register(EmailServiceProtocol, SmtpEmailService, LifeStyle.PER_REQUEST,
-                      params={'smtp_server': 'smtp.example.com'})
+                      params = {'smtp_server': 'smtp.example.com'})
 
 
 def demo(di_container: Injector) -> None:
@@ -41,7 +41,7 @@ def demo(di_container: Injector) -> None:
 
 def configure_alternative(di_container: Injector) -> None:
     di_container.register(LoggerProtocol, FileLogger, LifeStyle.SINGLETON,
-                      params={'filename': 'alternative.log'})
+                      params = {'filename': 'alternative.log'})
     di_container.register(DatabaseProtocol, MockDatabase, LifeStyle.SCOPED)
     di_container.register(EmailServiceProtocol, MockEmailService, LifeStyle.PER_REQUEST)
 
@@ -58,6 +58,26 @@ def demo_alternative(di_container: Injector) -> None:
         print(email.send("test@example.com", "Test", "Hello"))
 
 
+def configure_factory(di_container: Injector) -> None:
+    def create_file_logger() -> LoggerProtocol:
+        print("Creating a logger using the factory method")
+        return FileLogger(filename = "factory.log")
+    di_container.register(
+        LoggerProtocol,
+        factory_method = create_file_logger,
+        life_style = LifeStyle.SINGLETON
+    )
+
+    di_container.register(DatabaseProtocol, MockDatabase, LifeStyle.SCOPED)
+    di_container.register(EmailServiceProtocol, MockEmailService, LifeStyle.PER_REQUEST)
+
+
+def demo_factory(di_container: Injector) -> None:
+    logger = di_container.get_instance(LoggerProtocol)
+    logger.log("Factory method test")
+
+
+
 if __name__ == "__main__":
     # Original configuration
     main_injector = Injector()
@@ -68,3 +88,8 @@ if __name__ == "__main__":
     alt_injector = Injector()
     configure_alternative(alt_injector)
     demo_alternative(alt_injector)
+
+    # Configuration with factory
+    factory_injector = Injector()
+    configure_factory(factory_injector)
+    demo_factory(factory_injector)
